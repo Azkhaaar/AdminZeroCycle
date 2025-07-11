@@ -45,7 +45,7 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: 'zeroadmin@admin.com',
-      password: '',
+      password: 'AdminZeroCycle',
     },
   });
 
