@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -37,12 +36,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send, Wand2, MessageSquare, ExternalLink } from "lucide-react";
 
 const notificationSchema = z.object({
-  userName: z.string().min(2, "User name is required"),
-  pickupDate: z.string().min(1, "Pickup date is required"),
-  pickupTime: z.string().min(1, "Pickup time is required"),
-  wasteType: z.string().min(1, "Waste type is required"),
-  wasteAmountKg: z.coerce.number().min(0.1, "Waste amount must be at least 0.1 kg"),
-  phoneNumber: z.string().regex(/^\+?[0-9\s-]{10,15}$/, "Invalid phone number format"),
+  userName: z.string().min(2, "Nama pengguna harus diisi"),
+  pickupDate: z.string().min(1, "Tanggal penjemputan harus diisi"),
+  pickupTime: z.string().min(1, "Waktu penjemputan harus diisi"),
+  wasteType: z.string().min(1, "Jenis sampah harus diisi"),
+  wasteAmountKg: z.coerce.number().min(0.1, "Jumlah sampah minimal 0.1 kg"),
+  phoneNumber: z.string().regex(/^\+?[0-9\s-]{10,15}$/, "Format nomor telepon tidak valid"),
 });
 
 export default function NotificationsPage() {
@@ -56,7 +55,7 @@ export default function NotificationsPage() {
       userName: "",
       pickupDate: new Date().toISOString().split('T')[0],
       pickupTime: "",
-      wasteType: "Mixed",
+      wasteType: "Campuran",
       wasteAmountKg: 1,
       phoneNumber: "",
     },
@@ -68,8 +67,8 @@ export default function NotificationsPage() {
       if (result.success) {
         setGeneratedMessage(result.message);
         toast({
-          title: "Message Generated",
-          description: "Notification message created successfully.",
+          title: "Pesan Dibuat",
+          description: "Pesan notifikasi berhasil dibuat.",
         });
       } else {
         toast({
@@ -91,19 +90,19 @@ export default function NotificationsPage() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold font-headline tracking-tight">
-          Automated WhatsApp Notifications
+          Notifikasi WhatsApp Otomatis
         </h1>
         <p className="text-muted-foreground">
-          Generate and send waste pickup notifications to users.
+          Buat dan kirim notifikasi penjemputan sampah kepada pengguna.
         </p>
       </header>
 
       <div className="grid lg:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
-            <CardTitle>Pickup Details</CardTitle>
+            <CardTitle>Detail Penjemputan</CardTitle>
             <CardDescription>
-              Fill in the form to generate a pickup notification.
+              Isi formulir untuk membuat notifikasi penjemputan.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -114,9 +113,9 @@ export default function NotificationsPage() {
                   name="userName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>User Name</FormLabel>
+                      <FormLabel>Nama Pengguna</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Budi Santoso" {...field} />
+                        <Input placeholder="cth., Budi Santoso" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -127,7 +126,7 @@ export default function NotificationsPage() {
                   name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>User Phone Number</FormLabel>
+                      <FormLabel>Nomor Telepon Pengguna</FormLabel>
                       <FormControl>
                         <Input placeholder="+62..." {...field} />
                       </FormControl>
@@ -141,7 +140,7 @@ export default function NotificationsPage() {
                     name="pickupDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Pickup Date</FormLabel>
+                        <FormLabel>Tanggal Penjemputan</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -154,7 +153,7 @@ export default function NotificationsPage() {
                     name="pickupTime"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Pickup Time</FormLabel>
+                        <FormLabel>Waktu Penjemputan</FormLabel>
                         <FormControl>
                           <Input type="time" {...field} />
                         </FormControl>
@@ -169,19 +168,19 @@ export default function NotificationsPage() {
                     name="wasteType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Waste Type</FormLabel>
+                        <FormLabel>Jenis Sampah</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select waste type" />
+                              <SelectValue placeholder="Pilih jenis sampah" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Plastic">Plastic</SelectItem>
-                            <SelectItem value="Paper">Paper</SelectItem>
-                            <SelectItem value="Glass">Glass</SelectItem>
-                            <SelectItem value="Metal">Metal</SelectItem>
-                            <SelectItem value="Mixed">Mixed</SelectItem>
+                            <SelectItem value="Plastik">Plastik</SelectItem>
+                            <SelectItem value="Kertas">Kertas</SelectItem>
+                            <SelectItem value="Kaca">Kaca</SelectItem>
+                            <SelectItem value="Logam">Logam</SelectItem>
+                            <SelectItem value="Campuran">Campuran</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -193,7 +192,7 @@ export default function NotificationsPage() {
                     name="wasteAmountKg"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Amount (kg)</FormLabel>
+                        <FormLabel>Jumlah (kg)</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.1" {...field} />
                         </FormControl>
@@ -208,7 +207,7 @@ export default function NotificationsPage() {
                   ) : (
                     <Wand2 className="mr-2 h-4 w-4" />
                   )}
-                  Generate Message
+                  Buat Pesan
                 </Button>
               </form>
             </Form>
@@ -217,9 +216,9 @@ export default function NotificationsPage() {
         
         <Card className="flex flex-col">
           <CardHeader>
-            <CardTitle>Generated Message</CardTitle>
+            <CardTitle>Pesan Dihasilkan</CardTitle>
             <CardDescription>
-              Review the generated message before sending.
+              Tinjau pesan yang dibuat sebelum mengirim.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
@@ -232,14 +231,14 @@ export default function NotificationsPage() {
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground bg-muted/50 rounded-md p-4">
                  <MessageSquare className="w-12 h-12 mb-4"/>
-                <p>Your generated message will appear here.</p>
+                <p>Pesan yang Anda buat akan muncul di sini.</p>
               </div>
             )}
           </CardContent>
           <CardFooter>
             <Button asChild disabled={!generatedMessage || isPending} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
               <a href={getWhatsAppLink()} target="_blank" rel="noopener noreferrer">
-                <Send className="mr-2 h-4 w-4" /> Send via WhatsApp <ExternalLink className="ml-2 h-3 w-3" />
+                <Send className="mr-2 h-4 w-4" /> Kirim via WhatsApp <ExternalLink className="ml-2 h-3 w-3" />
               </a>
             </Button>
           </CardFooter>

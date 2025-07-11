@@ -46,34 +46,34 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 const collectors = [
   {
     id: "col_1",
-    name: "Pengepul Berkah",
-    location: "Jakarta Selatan",
-    status: "Active",
+    name: "Bank Sampah Godean",
+    location: "Godean, Sleman",
+    status: "Aktif",
   },
   {
     id: "col_2",
-    name: "Sampah Jadi Emas",
-    location: "Surabaya",
-    status: "Active",
+    name: "Pengepul Maju Jaya",
+    location: "Kotagede, Yogyakarta",
+    status: "Aktif",
   },
   {
     id: "col_3",
-    name: "Gudang Daur Ulang",
-    location: "Bandung",
-    status: "Inactive",
+    name: "Gudang Daur Ulang Bantul",
+    location: "Bantul, Bantul",
+    status: "Tidak Aktif",
   },
   {
     id: "col_4",
-    name: "CV. Rejeki Plastik",
-    location: "Medan",
-    status: "Active",
+    name: "CV. Rejeki Depok",
+    location: "Depok, Sleman",
+    status: "Aktif",
   },
 ];
 
 const collectorSchema = z.object({
-  name: z.string().min(3, { message: "Name must be at least 3 characters." }),
-  location: z.string().min(5, { message: "Location must be at least 5 characters." }),
-  contact: z.string().regex(/^\+?[0-9\s-]{10,15}$/, { message: "Invalid phone number." }),
+  name: z.string().min(3, { message: "Nama harus minimal 3 karakter." }),
+  location: z.string().min(5, { message: "Lokasi harus minimal 5 karakter." }),
+  contact: z.string().regex(/^\+?[0-9\s-]{10,15}$/, { message: "Nomor telepon tidak valid." }),
 });
 
 export default function CollectorsPage() {
@@ -91,8 +91,8 @@ export default function CollectorsPage() {
 
   const handleDelete = (collectorId: string) => {
     toast({
-      title: "Collector Removed",
-      description: `Collector with ID: ${collectorId} has been removed.`,
+      title: "Pengepul Dihapus",
+      description: `Pengepul dengan ID: ${collectorId} telah dihapus.`,
       variant: "destructive",
     });
   };
@@ -100,8 +100,8 @@ export default function CollectorsPage() {
   const onSubmit = (values: z.infer<typeof collectorSchema>) => {
     console.log(values);
     toast({
-      title: "Collector Added",
-      description: `New collector "${values.name}" has been added successfully.`,
+      title: "Pengepul Ditambahkan",
+      description: `Pengepul baru "${values.name}" telah berhasil ditambahkan.`,
     });
     form.reset();
     setOpen(false);
@@ -111,31 +111,31 @@ export default function CollectorsPage() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold font-headline tracking-tight">
-          Collector Location Management
+          Manajemen Lokasi Pengepul
         </h1>
         <p className="text-muted-foreground">
-          Add, remove, and manage waste collector locations.
+          Tambah, hapus, dan kelola lokasi pengepul sampah.
         </p>
       </header>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>All Collectors</CardTitle>
-            <CardDescription>A list of all waste collectors in the network.</CardDescription>
+            <CardTitle>Semua Pengepul</CardTitle>
+            <CardDescription>Daftar semua pengepul sampah di dalam jaringan.</CardDescription>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Add Collector
+                Tambah Pengepul
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle className="font-headline">Add New Collector</DialogTitle>
+                <DialogTitle className="font-headline">Tambah Pengepul Baru</DialogTitle>
                 <DialogDescription>
-                  Enter the details for the new waste collector.
+                  Masukkan detail untuk pengepul sampah yang baru.
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -145,9 +145,9 @@ export default function CollectorsPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Collector Name</FormLabel>
+                        <FormLabel>Nama Pengepul</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Pengepul Berkah" {...field} />
+                          <Input placeholder="cth., Bank Sampah Godean" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -158,9 +158,9 @@ export default function CollectorsPage() {
                     name="location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Location</FormLabel>
+                        <FormLabel>Lokasi</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Jakarta Selatan" {...field} />
+                          <Input placeholder="cth., Godean, Sleman" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -171,7 +171,7 @@ export default function CollectorsPage() {
                     name="contact"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contact Number</FormLabel>
+                        <FormLabel>Nomor Kontak</FormLabel>
                         <FormControl>
                           <Input placeholder="+62 812 3456 7890" {...field} />
                         </FormControl>
@@ -180,7 +180,7 @@ export default function CollectorsPage() {
                     )}
                   />
                   <DialogFooter>
-                    <Button type="submit">Save Collector</Button>
+                    <Button type="submit">Simpan Pengepul</Button>
                   </DialogFooter>
                 </form>
               </Form>
@@ -191,10 +191,10 @@ export default function CollectorsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Location</TableHead>
+                <TableHead>Nama</TableHead>
+                <TableHead>Lokasi</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">Tindakan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -204,8 +204,8 @@ export default function CollectorsPage() {
                   <TableCell>{collector.location}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={collector.status === "Active" ? "default" : "secondary"}
-                       className={collector.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500/30" : ""}
+                      variant={collector.status === "Aktif" ? "default" : "secondary"}
+                       className={collector.status === "Aktif" ? "bg-green-500/20 text-green-700 border-green-500/30" : ""}
                     >
                       {collector.status}
                     </Badge>
@@ -214,7 +214,7 @@ export default function CollectorsPage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
+                          <span className="sr-only">Buka menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -224,7 +224,7 @@ export default function CollectorsPage() {
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Remove</span>
+                          <span>Hapus</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

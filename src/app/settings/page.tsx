@@ -26,8 +26,8 @@ import { z } from "zod";
 import { Loader2, Save } from "lucide-react";
 
 const settingsSchema = z.object({
-  pointsPerKg: z.coerce.number().positive("Must be a positive number"),
-  rupiahPerPoint: z.coerce.number().int().positive("Must be a positive integer"),
+  pointsPerKg: z.coerce.number().positive("Harus berupa angka positif"),
+  rupiahPerPoint: z.coerce.number().int().positive("Harus berupa bilangan bulat positif"),
 });
 
 export default function SettingsPage() {
@@ -43,22 +43,22 @@ export default function SettingsPage() {
   const {formState} = form;
 
   const onSubmit = (values: z.infer<typeof settingsSchema>) => {
-    console.log("Saving settings:", values);
+    console.log("Menyimpan pengaturan:", values);
     toast({
-      title: "Settings Saved",
-      description: "Points configuration has been updated successfully.",
+      title: "Pengaturan Disimpan",
+      description: "Konfigurasi poin telah berhasil diperbarui.",
     });
-    form.reset(values); // This resets the 'dirty' state of the form
+    form.reset(values); // Ini mengatur ulang status 'dirty' dari form
   };
 
   return (
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold font-headline tracking-tight">
-          System Settings
+          Pengaturan Sistem
         </h1>
         <p className="text-muted-foreground">
-          Configure the core mechanics of the ZeroCycle application.
+          Konfigurasikan mekanisme inti aplikasi ZeroCycle.
         </p>
       </header>
 
@@ -66,10 +66,10 @@ export default function SettingsPage() {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Card className="max-w-2xl">
             <CardHeader>
-              <CardTitle>Points System Configuration</CardTitle>
+              <CardTitle>Konfigurasi Sistem Poin</CardTitle>
               <CardDescription>
-                Define how points are awarded and their cash value. These changes
-                will affect all users.
+                Tentukan bagaimana poin diberikan dan nilai tunainya. Perubahan ini
+                akan memengaruhi semua pengguna.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -78,7 +78,7 @@ export default function SettingsPage() {
                 name="pointsPerKg"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Points per Kilogram (kg)</FormLabel>
+                    <FormLabel>Poin per Kilogram (kg)</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="2" {...field} />
                     </FormControl>
@@ -91,7 +91,7 @@ export default function SettingsPage() {
                 name="rupiahPerPoint"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rupiah (Rp) per Point</FormLabel>
+                    <FormLabel>Rupiah (Rp) per Poin</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="500" {...field} />
                     </FormControl>
@@ -107,7 +107,7 @@ export default function SettingsPage() {
                 ) : (
                     <Save className="mr-2 h-4 w-4" />
                 )}
-                Save Changes
+                Simpan Perubahan
               </Button>
             </CardFooter>
           </Card>

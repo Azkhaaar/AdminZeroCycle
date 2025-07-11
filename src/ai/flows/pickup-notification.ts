@@ -1,32 +1,33 @@
+
 // pickup-notification.ts
 'use server';
 
 /**
- * @fileOverview Generates a WhatsApp message for waste pickup notifications based on user data and pickup details.
+ * @fileOverview Menghasilkan pesan WhatsApp untuk notifikasi penjemputan sampah berdasarkan data pengguna dan detail penjemputan.
  *
- * - generatePickupNotification - A function that generates the WhatsApp message.
- * - PickupNotificationInput - The input type for the generatePickupNotification function.
- * - PickupNotificationOutput - The return type for the generatePickupNotification function.
+ * - generatePickupNotification - Fungsi yang menghasilkan pesan WhatsApp.
+ * - PickupNotificationInput - Tipe input untuk fungsi generatePickupNotification.
+ * - PickupNotificationOutput - Tipe return untuk fungsi generatePickupNotification.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PickupNotificationInputSchema = z.object({
-  userName: z.string().describe('The name of the user.'),
-  pickupDate: z.string().describe('The date of the scheduled pickup (YYYY-MM-DD).'),
-  pickupTime: z.string().describe('The time of the scheduled pickup (HH:MM).'),
-  wasteType: z.string().describe('The type of waste to be picked up (e.g., plastic, paper, mixed).'),
-  wasteAmountKg: z.number().describe('The amount of waste in kilograms.'),
-  pointsEarned: z.number().describe('The number of points earned for the pickup.'),
-  currency: z.string().describe('The currency which points can be converted to (e.g. IDR).'),
-  exchangeRate: z.number().describe('The exchange rate of points to currency (e.g., 500).'),
-  phoneNumber: z.string().describe('The phone number of the user with country code.'),
+  userName: z.string().describe('Nama pengguna.'),
+  pickupDate: z.string().describe('Tanggal penjemputan yang dijadwalkan (YYYY-MM-DD).'),
+  pickupTime: z.string().describe('Waktu penjemputan yang dijadwalkan (HH:MM).'),
+  wasteType: z.string().describe('Jenis sampah yang akan dijemput (misalnya, plastik, kertas, campuran).'),
+  wasteAmountKg: z.number().describe('Jumlah sampah dalam kilogram.'),
+  pointsEarned: z.number().describe('Jumlah poin yang didapat dari penjemputan.'),
+  currency: z.string().describe('Mata uang yang dapat dikonversi dari poin (misalnya, IDR).'),
+  exchangeRate: z.number().describe('Nilai tukar poin ke mata uang (misalnya, 500).'),
+  phoneNumber: z.string().describe('Nomor telepon pengguna dengan kode negara.'),
 });
 export type PickupNotificationInput = z.infer<typeof PickupNotificationInputSchema>;
 
 const PickupNotificationOutputSchema = z.object({
-  message: z.string().describe('The generated WhatsApp message.'),
+  message: z.string().describe('Pesan WhatsApp yang dihasilkan.'),
 });
 export type PickupNotificationOutput = z.infer<typeof PickupNotificationOutputSchema>;
 
@@ -38,21 +39,21 @@ const prompt = ai.definePrompt({
   name: 'pickupNotificationPrompt',
   input: {schema: PickupNotificationInputSchema},
   output: {schema: PickupNotificationOutputSchema},
-  prompt: `Dear {{userName}},
+  prompt: `Yth. {{userName}},
 
-This is a notification for your scheduled waste pickup:
+Ini adalah pemberitahuan untuk jadwal penjemputan sampah Anda:
 
-Date: {{pickupDate}}
-Time: {{pickupTime}}
-Waste Type: {{wasteType}}
-Amount: {{wasteAmountKg}} kg
+Tanggal: {{pickupDate}}
+Waktu: {{pickupTime}}
+Jenis Sampah: {{wasteType}}
+Jumlah: {{wasteAmountKg}} kg
 
-You have earned {{pointsEarned}} points for this pickup! Each point is worth {{exchangeRate}} {{currency}} which you can convert into cash via the ZeroCycle app.
+Anda mendapatkan {{pointsEarned}} poin dari penjemputan ini! Setiap poin bernilai {{exchangeRate}} {{currency}} yang bisa Anda tukarkan menjadi uang tunai melalui aplikasi ZeroCycle.
 
-Thank you for contributing to a cleaner environment!
+Terima kasih atas kontribusi Anda untuk lingkungan yang lebih bersih!
 
-Sincerely,
-The ZeroCycle Team`,
+Hormat kami,
+Tim ZeroCycle`,
 });
 
 const pickupNotificationFlow = ai.defineFlow(

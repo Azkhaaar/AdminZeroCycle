@@ -31,7 +31,7 @@ export async function createNotification(data: z.infer<typeof NotificationAction
     const result = await generatePickupNotification(input);
     return { success: true, message: result.message };
   } catch (error) {
-    console.error("Error generating notification:", error);
-    return { success: false, message: 'Failed to generate notification message.' };
+    console.error("Gagal membuat notifikasi:", error);
+    return { success: false, message: 'Gagal membuat pesan notifikasi.' };
   }
 }

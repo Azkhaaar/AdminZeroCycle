@@ -24,38 +24,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 const users = [
   {
     id: "usr_1",
-    name: "Ahmad Subarjo",
-    email: "ahmad.s@example.com",
+    name: "Anisa Rahmawati",
+    email: "anisa.r@example.com",
     joined: "2023-10-01",
-    status: "Active",
+    status: "Aktif",
   },
   {
     id: "usr_2",
-    name: "Budi Santoso",
-    email: "budi.s@example.com",
+    name: "Bagus Setiawan",
+    email: "bagus.s@example.com",
     joined: "2023-11-15",
-    status: "Active",
+    status: "Aktif",
   },
   {
     id: "usr_3",
-    name: "Cici Paramida",
-    email: "cici.p@example.com",
+    name: "Citra Dewi",
+    email: "citra.d@example.com",
     joined: "2023-09-20",
-    status: "Blocked",
+    status: "Diblokir",
   },
   {
     id: "usr_4",
-    name: "Dewi Lestari",
-    email: "dewi.l@example.com",
+    name: "Dian Nugroho",
+    email: "dian.n@example.com",
     joined: "2024-01-05",
-    status: "Active",
+    status: "Aktif",
   },
   {
     id: "usr_5",
-    name: "Eko Prasetyo",
-    email: "eko.p@example.com",
+    name: "Eka Prasetya",
+    email: "eka.p@example.com",
     joined: "2024-02-12",
-    status: "Active",
+    status: "Aktif",
   },
 ];
 
@@ -64,15 +64,15 @@ export default function UsersPage() {
 
   const handleBlock = (userId: string) => {
     toast({
-      title: "User Blocked",
-      description: `User with ID: ${userId} has been blocked.`,
+      title: "Pengguna Diblokir",
+      description: `Pengguna dengan ID: ${userId} telah diblokir.`,
     });
   };
 
   const handleDelete = (userId: string) => {
     toast({
-      title: "User Deleted",
-      description: `User with ID: ${userId} has been deleted.`,
+      title: "Pengguna Dihapus",
+      description: `Pengguna dengan ID: ${userId} telah dihapus.`,
       variant: "destructive",
     });
   };
@@ -81,26 +81,26 @@ export default function UsersPage() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold font-headline tracking-tight">
-          User Account Management
+          Manajemen Akun Pengguna
         </h1>
         <p className="text-muted-foreground">
-          View, manage, block, and delete user accounts.
+          Lihat, kelola, blokir, dan hapus akun pengguna.
         </p>
       </header>
       <Card>
         <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription>A list of all registered users in the ZeroCycle system.</CardDescription>
+          <CardTitle>Semua Pengguna</CardTitle>
+          <CardDescription>Daftar semua pengguna yang terdaftar di sistem ZeroCycle.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead>Nama</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Date Joined</TableHead>
+                <TableHead>Tanggal Bergabung</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">Tindakan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -111,8 +111,8 @@ export default function UsersPage() {
                   <TableCell>{user.joined}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={user.status === "Active" ? "default" : "destructive"}
-                      className={user.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500/30" : ""}
+                      variant={user.status === "Aktif" ? "default" : "destructive"}
+                      className={user.status === "Aktif" ? "bg-green-500/20 text-green-700 border-green-500/30" : ""}
                     >
                       {user.status}
                     </Badge>
@@ -121,21 +121,21 @@ export default function UsersPage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
+                          <span className="sr-only">Buka menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleBlock(user.id)}>
                           <Ban className="mr-2 h-4 w-4" />
-                          <span>Block User</span>
+                          <span>Blokir Pengguna</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDelete(user.id)}
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Delete User</span>
+                          <span>Hapus Pengguna</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
