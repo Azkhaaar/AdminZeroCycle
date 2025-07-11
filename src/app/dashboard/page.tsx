@@ -1,8 +1,32 @@
 
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, MapPin, Star, Recycle, Send } from "lucide-react";
+import { firestore } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 
 export default function Dashboard() {
+  const [userCount, setUserCount] = useState(0);
+  const [collectorCount, setCollectorCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const usersCollection = await getDocs(collection(firestore, 'users'));
+        setUserCount(usersCollection.size);
+
+        const collectorsCollection = await getDocs(collection(firestore, 'collectors'));
+        setCollectorCount(collectorsCollection.size);
+      } catch (error) {
+        console.error("Error fetching counts: ", error);
+      }
+    };
+
+    fetchCounts();
+  }, []);
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -22,9 +46,9 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4,521</div>
+            <div className="text-2xl font-bold">{userCount}</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% dari bulan lalu
+              Pengguna terdaftar
             </p>
           </CardContent>
         </Card>
@@ -36,9 +60,9 @@ export default function Dashboard() {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">28</div>
+            <div className="text-2xl font-bold">{collectorCount}</div>
             <p className="text-xs text-muted-foreground">
-              +2 lokasi baru minggu ini
+              Pengepul dalam jaringan
             </p>
           </CardContent>
         </Card>
@@ -50,9 +74,9 @@ export default function Dashboard() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12,500</div>
+            <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">
-              Setara dengan Rp 6.250.000
+              Belum ada transaksi
             </p>
           </CardContent>
         </Card>
@@ -64,9 +88,9 @@ export default function Dashboard() {
             <Recycle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+8,231 kg</div>
+            <div className="text-2xl font-bold">0 kg</div>
             <p className="text-xs text-muted-foreground">
-              +19% dari bulan lalu
+               Belum ada setoran
             </p>
           </CardContent>
         </Card>
@@ -83,26 +107,8 @@ export default function Dashboard() {
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="font-medium">Pengguna baru terdaftar: anisa.rahma@example.com</p>
-                  <p className="text-sm text-muted-foreground">2 menit yang lalu</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="bg-secondary p-2 rounded-full">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="font-medium">Pengepul baru ditambahkan: "Bank Sampah Godean"</p>
-                  <p className="text-sm text-muted-foreground">1 jam yang lalu</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="bg-secondary p-2 rounded-full">
-                  <Send className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="font-medium">Notifikasi penjemputan dikirim ke +628123456789</p>
-                  <p className="text-sm text-muted-foreground">3 jam yang lalu</p>
+                  <p className="font-medium">Tidak ada aktivitas baru</p>
+                  <p className="text-sm text-muted-foreground">Data aktivitas akan muncul di sini</p>
                 </div>
               </div>
             </div>

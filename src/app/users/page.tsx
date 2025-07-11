@@ -1,6 +1,7 @@
 
 "use client";
 
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -17,64 +18,68 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Ban, Trash2 } from "lucide-react";
+import { MoreHorizontal, Ban, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { firestore } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import { format } from 'date-fns';
 
-const users = [
-  {
-    id: "usr_1",
-    name: "Anisa Rahmawati",
-    email: "anisa.r@example.com",
-    joined: "2023-10-01",
-    status: "Aktif",
-  },
-  {
-    id: "usr_2",
-    name: "Bagus Setiawan",
-    email: "bagus.s@example.com",
-    joined: "2023-11-15",
-    status: "Aktif",
-  },
-  {
-    id: "usr_3",
-    name: "Citra Dewi",
-    email: "citra.d@example.com",
-    joined: "2023-09-20",
-    status: "Diblokir",
-  },
-  {
-    id: "usr_4",
-    name: "Dian Nugroho",
-    email: "dian.n@example.com",
-    joined: "2024-01-05",
-    status: "Aktif",
-  },
-  {
-    id: "usr_5",
-    name: "Eka Prasetya",
-    email: "eka.p@example.com",
-    joined: "2024-02-12",
-    status: "Aktif",
-  },
-];
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  joined: { seconds: number; nanoseconds: number; } | string;
+  status: 'Aktif' | 'Diblokir';
+}
 
 export default function UsersPage() {
   const { toast } = useToast();
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const usersCollection = collection(firestore, 'users');
+    const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
+      const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      setUsers(usersData);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Gagal mengambil data pengguna:", error);
+      toast({
+        title: "Error",
+        description: "Gagal mengambil data pengguna dari database.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
 
   const handleBlock = (userId: string) => {
     toast({
-      title: "Pengguna Diblokir",
-      description: `Pengguna dengan ID: ${userId} telah diblokir.`,
+      title: "Fungsi Belum Tersedia",
+      description: `Fungsi untuk memblokir pengguna dengan ID: ${userId} akan segera hadir.`,
     });
   };
 
   const handleDelete = (userId: string) => {
     toast({
-      title: "Pengguna Dihapus",
-      description: `Pengguna dengan ID: ${userId} telah dihapus.`,
+      title: "Fungsi Belum Tersedia",
+      description: `Fungsi untuk menghapus pengguna dengan ID: ${userId} akan segera hadir.`,
       variant: "destructive",
     });
+  };
+
+  const formatDate = (date: { seconds: number; nanoseconds: number; } | string) => {
+    if (typeof date === 'string') {
+        return date;
+    }
+    if (date && date.seconds) {
+        return format(new Date(date.seconds * 1000), 'yyyy-MM-dd');
+    }
+    return 'Tanggal tidak valid';
   };
 
   return (
@@ -93,57 +98,71 @@ export default function UsersPage() {
           <CardDescription>Daftar semua pengguna yang terdaftar di sistem ZeroCycle.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Tanggal Bergabung</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Tindakan</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.joined}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={user.status === "Aktif" ? "default" : "destructive"}
-                      className={user.status === "Aktif" ? "bg-green-500/20 text-green-700 border-green-500/30" : ""}
-                    >
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Buka menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleBlock(user.id)}>
-                          <Ban className="mr-2 h-4 w-4" />
-                          <span>Blokir Pengguna</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(user.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Hapus Pengguna</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Tanggal Bergabung</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Tindakan</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {users.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">
+                      Belum ada data pengguna.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{formatDate(user.joined)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={user.status === "Aktif" ? "default" : "destructive"}
+                          className={user.status === "Aktif" ? "bg-green-500/20 text-green-700 border-green-500/30" : ""}
+                        >
+                          {user.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Buka menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleBlock(user.id)}>
+                              <Ban className="mr-2 h-4 w-4" />
+                              <span>Blokir Pengguna</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(user.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Hapus Pengguna</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

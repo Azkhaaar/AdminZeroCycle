@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash2, PlusCircle } from "lucide-react";
+import { MoreHorizontal, Trash2, PlusCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -42,33 +42,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { firestore } from "@/lib/firebase";
+import { collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 
-const collectors = [
-  {
-    id: "col_1",
-    name: "Bank Sampah Godean",
-    location: "Godean, Sleman",
-    status: "Aktif",
-  },
-  {
-    id: "col_2",
-    name: "Pengepul Maju Jaya",
-    location: "Kotagede, Yogyakarta",
-    status: "Aktif",
-  },
-  {
-    id: "col_3",
-    name: "Gudang Daur Ulang Bantul",
-    location: "Bantul, Bantul",
-    status: "Tidak Aktif",
-  },
-  {
-    id: "col_4",
-    name: "CV. Rejeki Depok",
-    location: "Depok, Sleman",
-    status: "Aktif",
-  },
-];
+interface Collector {
+    id: string;
+    name: string;
+    location: string;
+    contact: string;
+    status: 'Aktif' | 'Tidak Aktif';
+}
 
 const collectorSchema = z.object({
   name: z.string().min(3, { message: "Nama harus minimal 3 karakter." }),
@@ -79,6 +62,8 @@ const collectorSchema = z.object({
 export default function CollectorsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [collectors, setCollectors] = useState<Collector[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const form = useForm<z.infer<typeof collectorSchema>>({
     resolver: zodResolver(collectorSchema),
@@ -88,23 +73,64 @@ export default function CollectorsPage() {
       contact: "",
     },
   });
-
-  const handleDelete = (collectorId: string) => {
-    toast({
-      title: "Pengepul Dihapus",
-      description: `Pengepul dengan ID: ${collectorId} telah dihapus.`,
-      variant: "destructive",
+  
+  useEffect(() => {
+    const collectorsCollection = collection(firestore, 'collectors');
+    const unsubscribe = onSnapshot(collectorsCollection, (snapshot) => {
+      const collectorsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Collector));
+      setCollectors(collectorsData);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Gagal mengambil data pengepul:", error);
+      toast({
+        title: "Error",
+        description: "Gagal mengambil data pengepul dari database.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
     });
+
+    return () => unsubscribe();
+  }, [toast]);
+
+
+  const handleDelete = async (collectorId: string) => {
+    try {
+      await deleteDoc(doc(firestore, "collectors", collectorId));
+      toast({
+        title: "Pengepul Dihapus",
+        description: `Pengepul telah berhasil dihapus.`,
+      });
+    } catch (error) {
+      console.error("Gagal menghapus pengepul: ", error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus pengepul.",
+        variant: "destructive",
+      });
+    }
   };
   
-  const onSubmit = (values: z.infer<typeof collectorSchema>) => {
-    console.log(values);
-    toast({
-      title: "Pengepul Ditambahkan",
-      description: `Pengepul baru "${values.name}" telah berhasil ditambahkan.`,
-    });
-    form.reset();
-    setOpen(false);
+  const onSubmit = async (values: z.infer<typeof collectorSchema>) => {
+    try {
+      const docRef = await addDoc(collection(firestore, "collectors"), {
+        ...values,
+        status: "Aktif",
+      });
+      toast({
+        title: "Pengepul Ditambahkan",
+        description: `Pengepul baru "${values.name}" telah berhasil ditambahkan.`,
+      });
+      form.reset();
+      setOpen(false);
+    } catch (error) {
+       console.error("Gagal menambahkan pengepul: ", error);
+       toast({
+          title: "Error",
+          description: "Gagal menambahkan pengepul baru.",
+          variant: "destructive",
+       });
+    }
   };
 
   return (
@@ -180,7 +206,10 @@ export default function CollectorsPage() {
                     )}
                   />
                   <DialogFooter>
-                    <Button type="submit">Simpan Pengepul</Button>
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                      {form.formState.isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
+                      Simpan Pengepul
+                    </Button>
                   </DialogFooter>
                 </form>
               </Form>
@@ -188,51 +217,67 @@ export default function CollectorsPage() {
           </Dialog>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nama</TableHead>
                 <TableHead>Lokasi</TableHead>
+                <TableHead>Kontak</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Tindakan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {collectors.map((collector) => (
-                <TableRow key={collector.id}>
-                  <TableCell className="font-medium">{collector.name}</TableCell>
-                  <TableCell>{collector.location}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={collector.status === "Aktif" ? "default" : "secondary"}
-                       className={collector.status === "Aktif" ? "bg-green-500/20 text-green-700 border-green-500/30" : ""}
-                    >
-                      {collector.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Buka menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(collector.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Hapus</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {collectors.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24">
+                    Belum ada data pengepul.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                collectors.map((collector) => (
+                  <TableRow key={collector.id}>
+                    <TableCell className="font-medium">{collector.name}</TableCell>
+                    <TableCell>{collector.location}</TableCell>
+                    <TableCell>{collector.contact}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={collector.status === "Aktif" ? "default" : "secondary"}
+                         className={collector.status === "Aktif" ? "bg-green-500/20 text-green-700 border-green-500/30" : ""}
+                      >
+                        {collector.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Buka menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(collector.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Hapus</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
     </div>
