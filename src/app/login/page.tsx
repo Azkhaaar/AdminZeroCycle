@@ -26,40 +26,51 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Email tidak valid.' }).refine(
-    (val) => val === 'zeroadmin@admin.com',
-    { message: 'Email tidak terdaftar.' }
-  ),
-  password: z.string().min(1, { message: 'Kata sandi harus diisi.' }).refine(
-    (val) => val === 'AdminZeroCycle',
-    { message: 'Kata sandi salah.' }
-  ),
+  email: z.string().email({ message: 'Email tidak valid.' }),
+  password: z.string().min(6, { message: 'Kata sandi minimal 6 karakter.' }),
 });
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      email: 'zeroadmin@admin.com',
       password: '',
     },
   });
 
-  const onSubmit = (values: z.infer<typeof loginSchema>) => {
-    if (values.email === 'zeroadmin@admin.com' && values.password === 'AdminZeroCycle') {
-      localStorage.setItem('isAuthenticated', 'true');
+  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+    setIsSubmitting(true);
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
         title: 'Login Berhasil',
         description: 'Selamat datang kembali, Admin!',
       });
       router.push('/dashboard');
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      let errorMessage = "Terjadi kesalahan saat login.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = 'Email atau kata sandi yang Anda masukkan salah.';
+      }
+      toast({
+        title: 'Login Gagal',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -117,7 +128,8 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Masuk
             </Button>
           </form>

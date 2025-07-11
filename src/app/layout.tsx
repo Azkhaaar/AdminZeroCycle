@@ -1,7 +1,7 @@
 
 "use client";
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
@@ -26,14 +26,15 @@ import {
   Settings,
   CircleHelp,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Toaster } from "@/components/ui/toaster";
 import { Logo } from "@/components/logo";
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({
@@ -41,32 +42,32 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
 });
 
-// export const metadata: Metadata = {
-//   title: "ZeroCycle Admin Hub",
-//   description: "Dasbor Administratif untuk ZeroCycle",
-// };
-
 function AuthWrapper({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const authStatus = localStorage.getItem('isAuthenticated') === 'true';
-        setIsAuthenticated(authStatus);
-        if (!authStatus && pathname !== '/login') {
-            router.replace('/login');
-        }
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                if (pathname !== '/login') {
+                    router.replace('/login');
+                }
+            }
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, [pathname, router]);
 
-    if (isAuthenticated === null) {
-        return null; // or a loading spinner
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+        );
     }
-
-    if (!isAuthenticated && pathname !== '/login') {
-        return null; // Still loading or about to redirect
-    }
-
+    
     return <>{children}</>;
 }
 
@@ -77,27 +78,9 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-      return (
-        <html lang="id" className="dark">
-            <body className={cn(
-                "min-h-screen bg-background font-sans antialiased",
-                inter.variable,
-                spaceGrotesk.variable
-            )}>
-            </body>
-        </html>
-      )
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
+  const handleLogout = async () => {
+    await signOut(auth);
     router.push('/login');
   };
 
