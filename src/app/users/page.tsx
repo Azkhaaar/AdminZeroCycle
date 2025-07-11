@@ -18,11 +18,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Ban, Trash2, Loader2 } from "lucide-react";
+import { MoreHorizontal, Ban, Trash2, Loader2, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { firestore } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { format } from 'date-fns';
 
 interface User {
@@ -57,19 +57,40 @@ export default function UsersPage() {
     return () => unsubscribe();
   }, [toast]);
 
-  const handleBlock = (userId: string) => {
-    toast({
-      title: "Fungsi Belum Tersedia",
-      description: `Fungsi untuk memblokir pengguna dengan ID: ${userId} akan segera hadir.`,
-    });
+  const handleToggleBlock = async (user: User) => {
+    const userRef = doc(firestore, "users", user.id);
+    const newStatus = user.status === 'Aktif' ? 'Diblokir' : 'Aktif';
+    try {
+      await updateDoc(userRef, { status: newStatus });
+      toast({
+        title: "Status Pengguna Diperbarui",
+        description: `Pengguna "${user.name}" telah ${newStatus === 'Aktif' ? 'diaktifkan' : 'diblokir'}.`,
+      });
+    } catch (error) {
+       console.error("Gagal memperbarui status pengguna:", error);
+       toast({
+        title: "Error",
+        description: "Gagal memperbarui status pengguna.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = (userId: string) => {
-    toast({
-      title: "Fungsi Belum Tersedia",
-      description: `Fungsi untuk menghapus pengguna dengan ID: ${userId} akan segera hadir.`,
-      variant: "destructive",
-    });
+  const handleDelete = async (userId: string) => {
+    try {
+      await deleteDoc(doc(firestore, "users", userId));
+      toast({
+        title: "Pengguna Dihapus",
+        description: "Pengguna telah berhasil dihapus dari sistem.",
+      });
+    } catch (error) {
+      console.error("Gagal menghapus pengguna:", error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus pengguna.",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatDate = (date: { seconds: number; nanoseconds: number; } | string) => {
@@ -143,9 +164,12 @@ export default function UsersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleBlock(user.id)}>
-                              <Ban className="mr-2 h-4 w-4" />
-                              <span>Blokir Pengguna</span>
+                            <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
+                              {user.status === 'Aktif' ? 
+                                <Ban className="mr-2 h-4 w-4" /> : 
+                                <KeyRound className="mr-2 h-4 w-4" />
+                              }
+                              <span>{user.status === 'Aktif' ? 'Blokir' : 'Aktifkan'}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleDelete(user.id)}
