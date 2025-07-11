@@ -4,7 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, MapPin, Star, Recycle, Send } from "lucide-react";
 import { firestore } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
 export default function Dashboard() {
@@ -12,19 +12,18 @@ export default function Dashboard() {
   const [collectorCount, setCollectorCount] = useState(0);
 
   useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const usersCollection = await getDocs(collection(firestore, 'users'));
-        setUserCount(usersCollection.size);
+    const usersUnsubscribe = onSnapshot(collection(firestore, 'users'), (snapshot) => {
+      setUserCount(snapshot.size);
+    });
 
-        const collectorsCollection = await getDocs(collection(firestore, 'collectors'));
-        setCollectorCount(collectorsCollection.size);
-      } catch (error) {
-        console.error("Error fetching counts: ", error);
-      }
+    const collectorsUnsubscribe = onSnapshot(collection(firestore, 'collectors'), (snapshot) => {
+      setCollectorCount(snapshot.size);
+    });
+
+    return () => {
+      usersUnsubscribe();
+      collectorsUnsubscribe();
     };
-
-    fetchCounts();
   }, []);
 
   return (

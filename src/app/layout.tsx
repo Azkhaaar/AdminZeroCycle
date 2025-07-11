@@ -53,6 +53,10 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
                 if (pathname !== '/login') {
                     router.replace('/login');
                 }
+            } else {
+                if (pathname === '/login') {
+                    router.replace('/dashboard');
+                }
             }
             setLoading(false);
         });
@@ -68,6 +72,11 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
         );
     }
     
+    // If not logged in and not on the login page, render nothing until redirect happens
+    if (!auth.currentUser && pathname !== '/login') {
+        return null;
+    }
+
     return <>{children}</>;
 }
 
@@ -80,8 +89,12 @@ export default function RootLayout({
   const router = useRouter();
 
   const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error("Gagal keluar:", error);
+    }
   };
 
   const showSidebarAndHeader = pathname !== '/login';
