@@ -29,6 +29,7 @@ import { Logo } from '@/components/logo';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import Link from 'next/link';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Email tidak valid.' }),
@@ -135,7 +136,10 @@ export default function LoginPage() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col gap-4">
+         <p className="text-xs text-muted-foreground text-center w-full">
+            Bukan admin? <Link href="/register-collector" className="text-primary hover:underline">Daftar sebagai pengepul</Link>.
+        </p>
          <p className="text-xs text-muted-foreground text-center w-full">
             © {new Date().getFullYear()} ZeroCycle. Dibuat untuk lingkungan.
         </p>

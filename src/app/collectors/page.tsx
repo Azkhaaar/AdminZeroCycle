@@ -11,74 +11,45 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Loader2, MoreHorizontal, CheckCircle, XCircle, Trash2, KeyRound, Ban } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { firestore } from "@/lib/firebase";
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, where, getDocs } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash2, PlusCircle, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { firestore } from "@/lib/firebase";
-import { collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 
 interface Collector {
     id: string;
     name: string;
     location: string;
     contact: string;
-    status: 'Aktif' | 'Tidak Aktif';
+    status: 'Aktif' | 'Tidak Aktif' | 'Menunggu Konfirmasi';
 }
-
-const collectorSchema = z.object({
-  name: z.string().min(3, { message: "Nama harus minimal 3 karakter." }),
-  location: z.string().min(5, { message: "Lokasi harus minimal 5 karakter." }),
-  contact: z.string().regex(/^\+?[0-9\s-]{10,15}$/, { message: "Nomor telepon tidak valid." }),
-});
 
 export default function CollectorsPage() {
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
   const [collectors, setCollectors] = useState<Collector[]>([]);
+  const [pendingCollectors, setPendingCollectors] = useState<Collector[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const form = useForm<z.infer<typeof collectorSchema>>({
-    resolver: zodResolver(collectorSchema),
-    defaultValues: {
-      name: "",
-      location: "",
-      contact: "",
-    },
-  });
-  
+
   useEffect(() => {
     const collectorsCollection = collection(firestore, 'collectors');
+
     const unsubscribe = onSnapshot(collectorsCollection, (snapshot) => {
-      const collectorsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Collector));
-      setCollectors(collectorsData);
+      const allCollectors = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Collector));
+      
+      const activeAndInactive = allCollectors.filter(c => c.status === 'Aktif' || c.status === 'Tidak Aktif');
+      const pending = allCollectors.filter(c => c.status === 'Menunggu Konfirmasi');
+
+      setCollectors(activeAndInactive);
+      setPendingCollectors(pending);
       setIsLoading(false);
     }, (error) => {
       console.error("Gagal mengambil data pengepul:", error);
@@ -93,6 +64,31 @@ export default function CollectorsPage() {
     return () => unsubscribe();
   }, [toast]);
 
+  const handleUpdateStatus = async (collectorId: string, newStatus: 'Aktif' | 'Tidak Aktif' | 'Ditolak') => {
+    const collectorRef = doc(firestore, "collectors", collectorId);
+    try {
+      if (newStatus === 'Ditolak') {
+        await deleteDoc(collectorRef);
+        toast({
+          title: "Pendaftaran Ditolak",
+          description: "Data pendaftar pengepul telah dihapus.",
+        });
+      } else {
+        await updateDoc(collectorRef, { status: newStatus });
+        toast({
+          title: "Status Pengepul Diperbarui",
+          description: `Pengepul telah berhasil ditandai sebagai ${newStatus}.`,
+        });
+      }
+    } catch (error) {
+       console.error("Gagal memperbarui status:", error);
+       toast({
+        title: "Error",
+        description: "Gagal memperbarui status pengepul.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleDelete = async (collectorId: string) => {
     try {
@@ -110,28 +106,90 @@ export default function CollectorsPage() {
       });
     }
   };
-  
-  const onSubmit = async (values: z.infer<typeof collectorSchema>) => {
-    try {
-      const docRef = await addDoc(collection(firestore, "collectors"), {
-        ...values,
-        status: "Aktif",
-      });
-      toast({
-        title: "Pengepul Ditambahkan",
-        description: `Pengepul baru "${values.name}" telah berhasil ditambahkan.`,
-      });
-      form.reset();
-      setOpen(false);
-    } catch (error) {
-       console.error("Gagal menambahkan pengepul: ", error);
-       toast({
-          title: "Error",
-          description: "Gagal menambahkan pengepul baru.",
-          variant: "destructive",
-       });
-    }
-  };
+
+  const renderCollectorTable = (data: Collector[], type: 'active' | 'pending') => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nama</TableHead>
+          <TableHead>Lokasi</TableHead>
+          <TableHead>Kontak</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="text-right">Tindakan</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={5} className="text-center h-24">
+              {type === 'active' ? 'Belum ada data pengepul.' : 'Tidak ada pendaftar baru.'}
+            </TableCell>
+          </TableRow>
+        ) : (
+          data.map((collector) => (
+            <TableRow key={collector.id}>
+              <TableCell className="font-medium">{collector.name}</TableCell>
+              <TableCell>{collector.location}</TableCell>
+              <TableCell>{collector.contact}</TableCell>
+              <TableCell>
+                <Badge
+                  variant={
+                    collector.status === "Aktif" ? "default" : 
+                    collector.status === "Tidak Aktif" ? "secondary" : 
+                    "outline"
+                  }
+                  className={
+                    collector.status === "Aktif" ? "bg-green-500/20 text-green-700 border-green-500/30" : 
+                    collector.status === "Menunggu Konfirmasi" ? "bg-amber-500/20 text-amber-700 border-amber-500/30" :
+                    ""
+                  }
+                >
+                  {collector.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                {type === 'pending' ? (
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" size="sm" onClick={() => handleUpdateStatus(collector.id, 'Aktif')}>
+                      <CheckCircle className="mr-2 h-4 w-4"/> Setujui
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleUpdateStatus(collector.id, 'Ditolak')}>
+                      <XCircle className="mr-2 h-4 w-4"/> Tolak
+                    </Button>
+                  </div>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Buka menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                       <DropdownMenuItem onClick={() => handleUpdateStatus(collector.id, collector.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif')}>
+                          {collector.status === 'Aktif' ? 
+                            <Ban className="mr-2 h-4 w-4" /> : 
+                            <KeyRound className="mr-2 h-4 w-4" />
+                          }
+                          <span>{collector.status === 'Aktif' ? 'Nonaktifkan' : 'Aktifkan'}</span>
+                        </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(collector.id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Hapus</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </TableCell>
+            </TableRow>
+          ))
+        )}
+      </TableBody>
+    </Table>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -140,145 +198,48 @@ export default function CollectorsPage() {
           Manajemen Lokasi Pengepul
         </h1>
         <p className="text-muted-foreground">
-          Tambah, hapus, dan kelola lokasi pengepul sampah.
+          Kelola dan konfirmasi pendaftaran pengepul sampah baru.
         </p>
       </header>
-
+      
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Semua Pengepul</CardTitle>
-            <CardDescription>Daftar semua pengepul sampah di dalam jaringan.</CardDescription>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-60">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Tambah Pengepul
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle className="font-headline">Tambah Pengepul Baru</DialogTitle>
-                <DialogDescription>
-                  Masukkan detail untuk pengepul sampah yang baru.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nama Pengepul</FormLabel>
-                        <FormControl>
-                          <Input placeholder="cth., Bank Sampah Godean" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lokasi</FormLabel>
-                        <FormControl>
-                          <Input placeholder="cth., Godean, Sleman" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="contact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nomor Kontak</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+62 812 3456 7890" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button type="submit" disabled={form.formState.isSubmitting}>
-                      {form.formState.isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
-                      Simpan Pengepul
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-40">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Lokasi</TableHead>
-                <TableHead>Kontak</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Tindakan</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {collectors.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">
-                    Belum ada data pengepul.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                collectors.map((collector) => (
-                  <TableRow key={collector.id}>
-                    <TableCell className="font-medium">{collector.name}</TableCell>
-                    <TableCell>{collector.location}</TableCell>
-                    <TableCell>{collector.contact}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={collector.status === "Aktif" ? "default" : "secondary"}
-                         className={collector.status === "Aktif" ? "bg-green-500/20 text-green-700 border-green-500/30" : ""}
-                      >
-                        {collector.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Buka menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(collector.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Hapus</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          )}
-        </CardContent>
+        ) : (
+          <Tabs defaultValue="collectors">
+            <CardHeader>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="collectors">Daftar Pengepul</TabsTrigger>
+                <TabsTrigger value="pending">
+                  Menunggu Konfirmasi 
+                  {pendingCollectors.length > 0 && 
+                    <Badge className="ml-2 bg-accent text-accent-foreground">{pendingCollectors.length}</Badge>
+                  }
+                </TabsTrigger>
+              </TabsList>
+            </CardHeader>
+            <TabsContent value="collectors">
+              <CardHeader className="pt-0">
+                <CardTitle>Semua Pengepul</CardTitle>
+                <CardDescription>Daftar semua pengepul sampah yang aktif dan tidak aktif di dalam jaringan.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {renderCollectorTable(collectors, 'active')}
+              </CardContent>
+            </TabsContent>
+            <TabsContent value="pending">
+               <CardHeader className="pt-0">
+                <CardTitle>Pendaftar Baru</CardTitle>
+                <CardDescription>Tinjau dan konfirmasi pendaftaran pengepul baru.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {renderCollectorTable(pendingCollectors, 'pending')}
+              </CardContent>
+            </TabsContent>
+          </Tabs>
+        )}
       </Card>
     </div>
   );
