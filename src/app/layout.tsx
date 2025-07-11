@@ -32,7 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Toaster } from "@/components/ui/toaster";
 import { Logo } from "@/components/logo";
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -49,27 +49,26 @@ const spaceGrotesk = Space_Grotesk({
 function AuthWrapper({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
     useEffect(() => {
-        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-        if (!isAuthenticated && pathname !== '/login') {
+        const authStatus = localStorage.getItem('isAuthenticated') === 'true';
+        setIsAuthenticated(authStatus);
+        if (!authStatus && pathname !== '/login') {
             router.replace('/login');
         }
     }, [pathname, router]);
 
-    if (!isClient()) return null;
-
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (!isAuthenticated && pathname !== '/login') {
+    if (isAuthenticated === null) {
         return null; // or a loading spinner
+    }
+
+    if (!isAuthenticated && pathname !== '/login') {
+        return null; // Still loading or about to redirect
     }
 
     return <>{children}</>;
 }
-
-
-const isClient = () => typeof window !== 'undefined';
-
 
 export default function RootLayout({
   children,
@@ -78,8 +77,13 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const router = useRouter();
-  
-  if (!isClient()) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
       return (
         <html lang="id" className="dark">
             <body className={cn(
